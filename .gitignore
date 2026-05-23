@@ -1,2 +1,9 @@
+# IDE
 .vscode
+
+# environment
 .env
+
+# media
+*.mkv
+*.mp4

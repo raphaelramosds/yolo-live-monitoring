@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "yolo-live-monitoring-backend"
+version = "0.1.0"
+description = "YOLO Live Monitoring System with FastAPI"
+authors = ["Raphael Ramos <raphael.opensource@gmail.com>"]
+packages = [{ include = "yolo_live_monitoring" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.110.0"
+uvicorn = "^0.28.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0.3,<10.0.0"
+pytest-asyncio = "^1.3.0"

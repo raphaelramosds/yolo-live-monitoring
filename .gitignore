@@ -7,3 +7,6 @@
 # media
 *.mkv
 *.mp4
+
+# db
+*.db

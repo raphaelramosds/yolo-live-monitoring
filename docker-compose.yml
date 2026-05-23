@@ -10,14 +10,17 @@ services:
     restart: unless-stopped
     develop:
       watch:
-        - action: restart
+        - action: sync+restart
           path: ./backend/yolo_live_monitoring
+          target: /app/yolo_live_monitoring
         - action: rebuild
           path: ./backend/pyproject.toml
         - action: rebuild
           path: ./backend/poetry.lock
         - action: rebuild
           path: ./backend/Dockerfile
+    volumes:
+      - ./data:/app/.data
 
   frontend:
     container_name: yolo-live-monitoring-frontend

@@ -1,6 +1,6 @@
 import sqlite3
 from yolo_live_monitoring.application.settings import settings
-from yolo_live_monitoring.application.commands import CreateRTSPConnectionCommand
+from yolo_live_monitoring.application.commands import CreateRTSPConnectionCommand, UpdateRTSPConnectionCommand
 
 class SqliteRepository:
     
@@ -51,4 +51,49 @@ class SqliteRepository:
             # Log any unexpected failures (e.g., disk full, database locked)
             print(f"An unexpected error occurred while writing data: {e}")
             raise e
-                
+
+    def get_all_rtsp_connections(self) -> list[dict]:
+        with sqlite3.connect(settings.db_sqlite_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name, rtsp_url, description FROM rtsp_connnections")
+            return [dict(row) for row in cursor.fetchall()]
+
+    def update_rtsp_connection(self, connection_id: int, command: UpdateRTSPConnectionCommand) -> bool:
+        query = """
+            UPDATE rtsp_connnections
+            SET name = :name, rtsp_url = :rtsp_url, description = :description
+            WHERE id = :id
+        """
+        data = {**command.model_dump(), 'id': connection_id}
+        try:
+            with sqlite3.connect(settings.db_sqlite_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, data)
+                conn.commit()
+                return cursor.rowcount > 0
+        except sqlite3.IntegrityError:
+            print(f"Failed to update: Stream URL '{command.rtsp_url}' already exists.")
+            return False
+        except Exception as e:
+            print(f"An unexpected error occurred while updating data: {e}")
+            raise e
+
+    def delete_rtsp_connection(self, connection_id: int) -> bool:
+        with sqlite3.connect(settings.db_sqlite_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM rtsp_connnections WHERE id = ?", (connection_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_rtsp_connection_by_id(self, connection_id: int) -> dict | None:
+        with sqlite3.connect(settings.db_sqlite_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, name, rtsp_url, description FROM rtsp_connnections WHERE id = ?",
+                (connection_id,)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+

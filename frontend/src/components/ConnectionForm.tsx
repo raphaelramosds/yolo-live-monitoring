@@ -5,7 +5,11 @@ import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
 
-export default function ConnectionForm() {
+type Props = {
+  onSuccess?: () => void;
+};
+
+export default function ConnectionForm({ onSuccess }: Props) {
   const [name, setName] = useState('');
   const [rtspUrl, setRtspUrl] = useState('');
   const [description, setDescription] = useState('');
@@ -41,6 +45,7 @@ export default function ConnectionForm() {
       setName('');
       setRtspUrl('');
       setDescription('');
+      onSuccess?.();
     } catch (error: any) {
       setSubmitStatus('error');
       setStatusMessage(error.message);

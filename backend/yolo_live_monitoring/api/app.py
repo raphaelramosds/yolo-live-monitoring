@@ -1,14 +1,18 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from yolo_live_monitoring.application.settings import settings
 from yolo_live_monitoring.application.sqlite_repository import SqliteRepository
+from yolo_live_monitoring.api.api_models import RTSPConnectionPayload
+from yolo_live_monitoring.application.commands import CreateRTSPConnectionCommand
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     # Everything before the 'yield' runs on application startup
     print("Executing startup tasks...")
-    sqlite_repository = SqliteRepository()
+
+    # Store the instance inside app.state os it is globally available across requests
+    app.state.sqlite_repository = SqliteRepository()
 
     yield
 
@@ -36,4 +40,33 @@ def get_status():
     return {
         "status": "active",
         "service": "yolo-live-monitoring-backend",
+    }
+
+@app.post("/connections", status_code=status.HTTP_201_CREATED)
+def create_connection(
+    payload: RTSPConnectionPayload,
+    request: Request
+):
+    sqlite_repository: SqliteRepository = request.app.state.sqlite_repository
+
+    create_rtsp_connection_command = CreateRTSPConnectionCommand(
+        name=payload.name,
+        rtsp_url=payload.rtsp_url,
+        description=payload.description
+    )
+
+    success = sqlite_repository.create_rtsp_connection(
+        create_rtsp_connection_command
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"The RTSP connection URL might already exist in the database."
+        )
+        
+    return {
+        "status": "success",
+        "message": "Connection saved successfully.",
+        "data": create_rtsp_connection_command.model_dump()
     }

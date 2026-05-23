@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import ConnectionForm from "@/components/ConnectionForm";
 
 export default function MainScreen() {
   const [status, setStatus] = useState<"loading" | "alive" | "dead">("loading");
   
-  // Replace 'localhost' with your specific {{URL}} if needed
   const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''; 
 
   useEffect(() => {
@@ -69,8 +69,11 @@ export default function MainScreen() {
 
       {/* Main Content Dashboard Card placeholder */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <h3 className="text-lg font-semibold mb-2">Application Data</h3>
-        <p className="text-slate-600">Your core application content lives here once the backend state is healthy.</p>
+        <div className="mb-5">
+          <h3 className="text-lg font-semibold text-slate-800">Register Stream Connection</h3>
+          <p className="text-sm text-slate-500 mt-0.5">Add a new RTSP stream for live monitoring.</p>
+        </div>
+        <ConnectionForm />
       </div>
     </div>
   );

@@ -1,7 +1,9 @@
 from pydantic import BaseModel
 
-class RTSPConnectionPayload(BaseModel):
-    id: str | None = None
+class BaseCommand(BaseModel):
+    pass
+
+class CreateRTSPConnectionCommand(BaseCommand):
     name: str
     rtsp_url: str
     description: str | None = None

@@ -5,9 +5,9 @@ class SqliteRepository:
     
     def __init__(self):
         # We don't save self.conn here to avoid multi-threading crashes
-        pass
+        self.__migrate()
     
-    def migrate(self):
+    def __migrate(self):
         print(f'Will try to connect to: {settings.db_sqlite_path}...')
         try:
             with sqlite3.connect(settings.db_sqlite_path) as conn:

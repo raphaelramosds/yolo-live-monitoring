@@ -9,7 +9,6 @@ async def _lifespan(app: FastAPI):
     # Everything before the 'yield' runs on application startup
     print("Executing startup tasks...")
     sqlite_repository = SqliteRepository()
-    sqlite_repository.migrate()
 
     yield
 

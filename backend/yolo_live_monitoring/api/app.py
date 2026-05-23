@@ -73,6 +73,7 @@ async def stream_connection(
     async def event_generator():
         try:
             while True:
+                # Client has closed the browser or hit the stop button 
                 if await request.is_disconnected():
                     break
                 yield f"data: {datetime.now().isoformat()}\n\n"
@@ -82,8 +83,14 @@ async def stream_connection(
 
     return StreamingResponse(
         event_generator(),
+        # Inform client the response will come as a flow of events (SSE)
         media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        headers={
+            # Browser should not cache events, but keep it realtime
+            "Cache-Control": "no-cache",
+            # Backend should not buffer, but sent directly to client
+            "X-Accel-Buffering": "no"
+        },
     )
 
 

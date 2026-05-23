@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Wifi, Pencil, Trash2, Loader2, AlertCircle, Check, X } from 'lucide-react';
+import { api } from '@/infrastructure/api';
 import type { Connection } from '@/types/connection';
 
 type SaveStatus = 'idle' | 'loading' | 'error';
@@ -9,7 +10,6 @@ type DeleteStatus = 'idle' | 'confirming' | 'loading' | 'error';
 
 type Props = {
   connection: Connection;
-  apiUrl: string;
   onUpdate: (updated: Connection) => void;
   onDelete: () => void;
 };
@@ -17,7 +17,7 @@ type Props = {
 const inputClass =
   'w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition';
 
-export default function ConnectionInfoCard({ connection, apiUrl, onUpdate, onDelete }: Props) {
+export default function ConnectionInfoCard({ connection, onUpdate, onDelete }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
   const [editRtspUrl, setEditRtspUrl] = useState('');
@@ -47,22 +47,11 @@ export default function ConnectionInfoCard({ connection, apiUrl, onUpdate, onDel
     setSaveError('');
 
     try {
-      const response = await fetch(`${apiUrl}/connections/${connection.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editName,
-          rtsp_url: editRtspUrl,
-          description: editDescription || null,
-        }),
+      const result = await api.connections.update(connection.id, {
+        name: editName,
+        rtsp_url: editRtspUrl,
+        description: editDescription || null,
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.detail || 'Something went wrong');
-      }
-
       onUpdate(result.data);
       setIsEditing(false);
       setSaveStatus('idle');
@@ -75,10 +64,7 @@ export default function ConnectionInfoCard({ connection, apiUrl, onUpdate, onDel
   async function handleDelete() {
     setDeleteStatus('loading');
     try {
-      const response = await fetch(`${apiUrl}/connections/${connection.id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete');
+      await api.connections.delete(connection.id);
       onDelete();
     } catch {
       setDeleteStatus('error');

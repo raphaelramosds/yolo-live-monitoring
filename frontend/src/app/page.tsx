@@ -1,62 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Plus, Tv2 } from "lucide-react";
 import ConnectionForm from "@/components/ConnectionForm";
 import ConnectionCard from "@/components/ConnectionCard";
 import Modal from "@/components/Modal";
-import type { Connection } from "@/types/connection";
+import { useConnections } from "@/hooks/useConnections";
+import { api } from "@/infrastructure/api";
 
 type ApiStatus = "loading" | "alive" | "dead";
-type ConnectionsStatus = "loading" | "success" | "error";
 
 export default function MainScreen() {
   const [apiStatus, setApiStatus] = useState<ApiStatus>("loading");
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [connectionsStatus, setConnectionsStatus] = useState<ConnectionsStatus>("loading");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const { connections, status: connectionsStatus, refresh } = useConnections();
 
   useEffect(() => {
-    async function checkHealth() {
-      try {
-        const response = await fetch(`${NEXT_PUBLIC_API_URL}/healthcheck`, {
-          method: "GET",
-          signal: AbortSignal.timeout(500),
-        });
-        setApiStatus(response.ok ? "alive" : "dead");
-      } catch (error) {
-        console.error("Healthcheck failed:", error);
-        setApiStatus("dead");
-      }
-    }
-
-    checkHealth();
+    api.healthcheck
+      .check()
+      .then(() => setApiStatus("alive"))
+      .catch(() => setApiStatus("dead"));
   }, []);
 
-  const fetchConnections = useCallback(async () => {
-    setConnectionsStatus("loading");
-    try {
-      const response = await fetch(`${NEXT_PUBLIC_API_URL}/connections`);
-      if (!response.ok) throw new Error("Failed to fetch connections");
-      const data: Connection[] = await response.json();
-      setConnections(data);
-      setConnectionsStatus("success");
-    } catch (error) {
-      console.error("Failed to load connections:", error);
-      setConnectionsStatus("error");
-    }
-  }, [NEXT_PUBLIC_API_URL]);
-
-  useEffect(() => {
-    fetchConnections();
-  }, [fetchConnections]);
-
-  const handleFormSuccess = useCallback(() => {
+  function handleFormSuccess() {
     setIsModalOpen(false);
-    fetchConnections();
-  }, [fetchConnections]);
+    refresh();
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -78,7 +48,7 @@ export default function MainScreen() {
           <div>
             <span className="font-semibold">API is not alive!</span>
             <p className="text-sm text-red-700 mt-0.5">
-              Could not establish a connection to {NEXT_PUBLIC_API_URL}/healthcheck. Please verify your backend server is running.
+              Could not establish a connection to {api.baseUrl}/healthcheck. Please verify your backend server is running.
             </p>
           </div>
         </div>

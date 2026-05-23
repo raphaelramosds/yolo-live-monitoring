@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { api } from '@/infrastructure/api';
 
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
 
@@ -16,30 +17,13 @@ export default function ConnectionForm({ onSuccess }: Props) {
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
   const [statusMessage, setStatusMessage] = useState('');
 
-  const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitStatus('loading');
     setStatusMessage('');
 
     try {
-      const response = await fetch(`${NEXT_PUBLIC_API_URL}/connections`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          rtsp_url: rtspUrl,
-          description: description || null,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.detail || 'Something went wrong');
-      }
-
+      await api.connections.create({ name, rtsp_url: rtspUrl, description: description || null });
       setSubmitStatus('success');
       setStatusMessage('Connection registered successfully!');
       setName('');

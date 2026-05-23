@@ -47,6 +47,7 @@ def create_connection(
     payload: RTSPConnectionPayload,
     request: Request
 ):
+    # TODO: use FastAPI dependency injection (wiring container) to get Sqlite connection
     sqlite_repository: SqliteRepository = request.app.state.sqlite_repository
 
     create_rtsp_connection_command = CreateRTSPConnectionCommand(

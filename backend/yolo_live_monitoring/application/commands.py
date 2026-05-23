@@ -3,12 +3,12 @@ from pydantic import BaseModel
 class BaseCommand(BaseModel):
     pass
 
-class CreateRTSPConnectionCommand(BaseCommand):
+class CreateConnectionCommand(BaseCommand):
     name: str
     rtsp_url: str
     description: str | None = None
 
-class UpdateRTSPConnectionCommand(BaseCommand):
+class UpdateConnectionCommand(BaseCommand):
     name: str
     rtsp_url: str
     description: str | None = None

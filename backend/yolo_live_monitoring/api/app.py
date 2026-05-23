@@ -3,7 +3,7 @@ from fastapi import FastAPI, status, HTTPException, Body, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from yolo_live_monitoring.application.settings import settings
 from yolo_live_monitoring.application.sqlite_repository import SqliteRepository
-from yolo_live_monitoring.application.commands import CreateRTSPConnectionCommand, UpdateRTSPConnectionCommand
+from yolo_live_monitoring.application.commands import CreateConnectionCommand, UpdateConnectionCommand
 from yolo_live_monitoring.application.dependencies import get_sqlite_repository
 
 @asynccontextmanager
@@ -38,7 +38,7 @@ def get_status():
 def list_connections(
     sqlite_repository: SqliteRepository = Depends(get_sqlite_repository),
 ):
-    return sqlite_repository.get_all_rtsp_connections()
+    return sqlite_repository.get_all_connections()
 
 
 @app.get("/connections/{connection_id}")
@@ -46,7 +46,7 @@ def get_connection(
     connection_id: int,
     sqlite_repository: SqliteRepository = Depends(get_sqlite_repository),
 ):
-    connection = sqlite_repository.get_rtsp_connection_by_id(connection_id)
+    connection = sqlite_repository.get_connection_by_id(connection_id)
     if not connection:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -60,7 +60,7 @@ def delete_connection(
     connection_id: int,
     sqlite_repository: SqliteRepository = Depends(get_sqlite_repository),
 ):
-    deleted = sqlite_repository.delete_rtsp_connection(connection_id)
+    deleted = sqlite_repository.delete_connection(connection_id)
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -76,14 +76,14 @@ def update_connection(
     description: str | None = Body(None, embed=True),
     sqlite_repository: SqliteRepository = Depends(get_sqlite_repository),
 ):
-    if not sqlite_repository.get_rtsp_connection_by_id(connection_id):
+    if not sqlite_repository.get_connection_by_id(connection_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Connection with id {connection_id} not found."
         )
 
-    command = UpdateRTSPConnectionCommand(name=name, rtsp_url=rtsp_url, description=description)
-    success = sqlite_repository.update_rtsp_connection(connection_id, command)
+    command = UpdateConnectionCommand(name=name, rtsp_url=rtsp_url, description=description)
+    success = sqlite_repository.update_connection(connection_id, command)
 
     if not success:
         raise HTTPException(
@@ -105,13 +105,9 @@ def create_connection(
     description: str | None = Body(..., embed=True),
     sqlite_repository: SqliteRepository = Depends(get_sqlite_repository),
 ):
-    create_rtsp_connection_command = CreateRTSPConnectionCommand(
-        name=name,
-        rtsp_url=rtsp_url,
-        description=description
-    )
+    command = CreateConnectionCommand(name=name, rtsp_url=rtsp_url, description=description)
 
-    success = sqlite_repository.create_rtsp_connection(create_rtsp_connection_command)
+    success = sqlite_repository.create_connection(command)
 
     if not success:
         raise HTTPException(
@@ -122,5 +118,5 @@ def create_connection(
     return {
         "status": "success",
         "message": "Connection saved successfully.",
-        "data": create_rtsp_connection_command.model_dump()
+        "data": command.model_dump()
     }

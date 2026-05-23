@@ -1,6 +1,9 @@
+import asyncio
+from datetime import datetime
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, status, HTTPException, Body, Depends
+from fastapi import FastAPI, Request, status, HTTPException, Body, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from yolo_live_monitoring.application.settings import settings
 from yolo_live_monitoring.application.sqlite_repository import SqliteRepository
 from yolo_live_monitoring.application.commands import CreateConnectionCommand, UpdateConnectionCommand
@@ -53,6 +56,35 @@ def get_connection(
             detail=f"Connection with id {connection_id} not found."
         )
     return connection
+
+
+@app.get("/connections/{connection_id}/stream")
+async def stream_connection(
+    connection_id: int,
+    request: Request,
+    sqlite_repository: SqliteRepository = Depends(get_sqlite_repository),
+):
+    if not sqlite_repository.get_connection_by_id(connection_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Connection with id {connection_id} not found."
+        )
+
+    async def event_generator():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                yield f"data: {datetime.now().isoformat()}\n\n"
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            pass
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.delete("/connections/{connection_id}", status_code=status.HTTP_204_NO_CONTENT)
